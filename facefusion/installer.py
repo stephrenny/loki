@@ -1,17 +1,18 @@
-from typing import Dict, Tuple
+from typing import List, Dict, Tuple
 import sys
 import os
 import platform
 import tempfile
 import subprocess
 from argparse import ArgumentParser, HelpFormatter
+from facefusion.filesystem import list_files_names
+from facefusion import metadata, wording
 
 subprocess.call([ 'pip', 'install' , 'inquirer', '-q' ])
 
 import inquirer
 
-from facefusion import metadata, wording
-
+PATCHES : List[str] = list_files_names('.patches')
 TORCH : Dict[str, str] =\
 {
 	'default': 'default',
@@ -39,6 +40,7 @@ if platform.system().lower() == 'windows':
 
 def cli() -> None:
 	program = ArgumentParser(formatter_class = lambda prog: HelpFormatter(prog, max_help_position = 120))
+	program.add_argument('--patches', help = wording.get('skip_venv_help'), choices = PATCHES)
 	program.add_argument('--torch', help = wording.get('install_dependency_help').format(dependency = 'torch'), choices = TORCH.keys())
 	program.add_argument('--onnxruntime', help = wording.get('install_dependency_help').format(dependency = 'onnxruntime'), choices = ONNXRUNTIMES.keys())
 	program.add_argument('--skip-venv', help = wording.get('skip_venv_help'), action = 'store_true')
@@ -52,24 +54,31 @@ def run(program : ArgumentParser) -> None:
 
 	if not args.skip_venv:
 		os.environ['PIP_REQUIRE_VIRTUALENV'] = '1'
-	if args.torch and args.onnxruntime:
+	if args.patches and args.torch and args.onnxruntime:
 		answers =\
 		{
+			'patches': args.patches,
 			'torch': args.torch,
 			'onnxruntime': args.onnxruntime
 		}
 	else:
 		answers = inquirer.prompt(
 		[
+			inquirer.Checkbox('patches', message = wording.get('apply_patch_help'), choices = PATCHES),
 			inquirer.List('torch', message = wording.get('install_dependency_help').format(dependency = 'torch'), choices = list(TORCH.keys())),
 			inquirer.List('onnxruntime', message = wording.get('install_dependency_help').format(dependency = 'onnxruntime'), choices = list(ONNXRUNTIMES.keys()))
 		])
 	if answers:
+		patches = answers['patches']
 		torch = answers['torch']
 		torch_wheel = TORCH[torch]
 		onnxruntime = answers['onnxruntime']
 		onnxruntime_name, onnxruntime_version = ONNXRUNTIMES[onnxruntime]
 
+		if patches:
+			subprocess.run([ 'git', 'clear', '-d', '-x', '-f' ])
+			for patch in patches:
+				subprocess.run([ 'git', 'apply', '.patches/' + patch, '-q' ])
 		subprocess.call([ 'pip', 'uninstall', 'torch', '-y', '-q' ])
 		if torch_wheel == 'default':
 			subprocess.call([ 'pip', 'install', '-r', 'requirements.txt' ])
