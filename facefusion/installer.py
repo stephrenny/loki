@@ -5,14 +5,14 @@ import platform
 import tempfile
 import subprocess
 from argparse import ArgumentParser, HelpFormatter
-from facefusion.filesystem import list_files_names
+from facefusion.filesystem import list_file_names
 from facefusion import metadata, wording
 
 subprocess.call([ 'pip', 'install' , 'inquirer', '-q' ])
 
 import inquirer
 
-PATCHES : List[str] = list_files_names('.patches')
+PATCHES : List[str] = list_file_names('.patches')
 TORCH : Dict[str, str] =\
 {
 	'default': 'default',
@@ -64,9 +64,9 @@ def run(program : ArgumentParser) -> None:
 	else:
 		answers = inquirer.prompt(
 		[
-			inquirer.Checkbox('patches', message = wording.get('apply_patch_help'), choices = PATCHES),
-			inquirer.List('torch', message = wording.get('install_dependency_help').format(dependency = 'torch'), choices = list(TORCH.keys())),
-			inquirer.List('onnxruntime', message = wording.get('install_dependency_help').format(dependency = 'onnxruntime'), choices = list(ONNXRUNTIMES.keys()))
+			inquirer.Checkbox('patches', message = wording.get('apply_patch_help'), choices = PATCHES, ignore = not PATCHES),
+			inquirer.List('torch', message = wording.get('install_dependency_help').format(dependency = 'torch'), choices = list(TORCH.keys()), ignore = not TORCH),
+			inquirer.List('onnxruntime', message = wording.get('install_dependency_help').format(dependency = 'onnxruntime'), choices = list(ONNXRUNTIMES.keys()), ignore = not ONNXRUNTIMES)
 		])
 	if answers:
 		patches = answers['patches']
