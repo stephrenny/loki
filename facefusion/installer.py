@@ -1,18 +1,17 @@
-from typing import List, Dict, Tuple
+from typing import Dict, Tuple
 import sys
 import os
 import platform
 import tempfile
 import subprocess
 from argparse import ArgumentParser, HelpFormatter
-from facefusion.filesystem import list_file_names
 from facefusion import metadata, wording
 
 subprocess.call([ 'pip', 'install' , 'inquirer', '-q' ])
 
 import inquirer
 
-PATCHES : List[str] = list_file_names('.patches')
+PATCHES = os.listdir('.patches') if os.path.exists('.patches') else None
 TORCH : Dict[str, str] =\
 {
 	'default': 'default',
@@ -76,9 +75,9 @@ def run(program : ArgumentParser) -> None:
 		onnxruntime_name, onnxruntime_version = ONNXRUNTIMES[onnxruntime]
 
 		if patches:
-			subprocess.run([ 'git', 'clear', '-d', '-x', '-f' ])
+			subprocess.run([ 'git', 'clean', 'facefusion', '-d', '-x', '-f' ])
 			for patch in patches:
-				subprocess.run([ 'git', 'apply', '.patches/' + patch, '-q' ])
+				subprocess.run([ 'git', 'apply', '.patches/' + patch ])
 		subprocess.call([ 'pip', 'uninstall', 'torch', '-y', '-q' ])
 		if torch_wheel == 'default':
 			subprocess.call([ 'pip', 'install', '-r', 'requirements.txt' ])
