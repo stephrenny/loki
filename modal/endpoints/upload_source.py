@@ -7,7 +7,10 @@ image = Image.debian_slim().pip_install("Pillow")
 stub = Stub("alias-upload-source-endpoint", image=image)
 vol = Volume.persisted("alias-sources")
 
-@stub.function(volumes={"/face-sources": vol}, _allow_background_volume_commits=True, secret=Secret.from_name("aws-s3-secret"))
+@stub.function(volumes={"/face-sources": vol}, 
+               _allow_background_volume_commits=True, 
+               secret=Secret.from_name("aws-s3-secret"), 
+               container_idle_timeout=1200)
 @web_endpoint(method="POST")
 async def upload_source(user_id: Optional[str] = Form(None), image_source_file: UploadFile = File(...)):
     import uuid
@@ -17,10 +20,6 @@ async def upload_source(user_id: Optional[str] = Form(None), image_source_file: 
     from PIL import Image
 
     sources_path = Path("/face-sources")
-
-    for root, _, files in os.walk(sources_path):
-        for file in files:
-            print(os.path.join(root, file))
 
     def save_as_jpeg(img, target_path):
         # If the image has an alpha channel, convert it to RGB
