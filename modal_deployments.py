@@ -7,14 +7,19 @@ def download_models():
     download_directory_path = ('/loki/.assets/models') # remove hardcode
     conditional_download(download_directory_path, [ 
         "https://github.com/facefusion/facefusion-assets/releases/download/models/inswapper_128.onnx", 
-        "https://github.com/facefusion/facefusion-assets/releases/download/models/gfpgan_1.4.onnx" 
+        "https://github.com/facefusion/facefusion-assets/releases/download/models/gfpgan_1.4.onnx",
+        "https://github.com/facefusion/facefusion-assets/releases/download/models/face_occluder.onnx",
+        "https://github.com/facefusion/facefusion-assets/releases/download/models/face_parser.onnx",
+        "https://github.com/facefusion/facefusion-assets/releases/download/models/retinaface_10g.onnx",
+        "https://github.com/facefusion/facefusion-assets/releases/download/models/open_nsfw.onnx",
+        "https://github.com/facefusion/facefusion-assets/releases/download/models/real_esrgan_x2plus.pth"
         ])
 
 image = Image.from_dockerfile("Dockerfile.cuda").pip_install(["Pillow", "boto3"]).run_function(download_models)
 vol = Volume.persisted("alias-sources")
 stub = Stub("alias-faceswap-endpoint", image=image)
 
-@stub.function(secret=Secret.from_name("aws-s3-secret"), volumes={"/face-sources": vol}, gpu="any")
+@stub.function(secret=Secret.from_name("aws-s3-secret"), volumes={"/face-sources": vol})
 @web_endpoint(method="POST")
 async def swap_face(user_id: Optional[str] = Form(None), 
               source_image_id: str = Form(...), 
@@ -75,10 +80,10 @@ async def swap_face(user_id: Optional[str] = Form(None),
     '-s', str(source_filename),
     '-t', str(target_filename),
     '-o', str(output_filename),
-    '--execution-providers', 'cuda',
+    # '--execution-providers', 'cuda',
     '--headless'
     ]
-    subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    subprocess.run(command, check=True, text=True)
 
     # Upload the file
     aws_filename = f"{uuid.uuid4()}.jpeg"

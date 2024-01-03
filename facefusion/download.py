@@ -16,6 +16,7 @@ def conditional_download(download_directory_path : str, urls : List[str]) -> Non
 		for url in urls:
 			executor.submit(get_download_size, url)
 	for url in urls:
+		print(url)
 		download_file_path = os.path.join(download_directory_path, os.path.basename(url))
 		initial = os.path.getsize(download_file_path) if is_file(download_file_path) else 0
 		total = get_download_size(url)
