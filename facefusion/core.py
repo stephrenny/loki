@@ -34,8 +34,6 @@ if platform.system().lower() == 'darwin':
 
 
 def cli() -> None:
-	print("Running custom version")
-
 	signal.signal(signal.SIGINT, lambda signal_number, frame: destroy())
 	program = ArgumentParser(formatter_class = lambda prog: HelpFormatter(prog, max_help_position = 120), add_help = False)
 	# general
